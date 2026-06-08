@@ -7,6 +7,7 @@ load_dotenv()
 
 engine = create_engine(
     os.getenv("DATABASE_URL"),
+    connect_args={'options': '-csearch_path=raw'},
     pool_size=10,
     max_overflow=20,
     pool_pre_ping=True
@@ -17,7 +18,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 class Base(DeclarativeBase):
     ...
 
-# Подключение моделей
+# from models import Product
 
 def get_db():
     db = SessionLocal()
