@@ -18,7 +18,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 class Base(DeclarativeBase):
     ...
 
-# from models import Product
+from models import Product, CampaignDesc, CampaignTable, Coupon, CouponRedempt, HHDemographic, TransactionData
 
 def get_db():
     db = SessionLocal()

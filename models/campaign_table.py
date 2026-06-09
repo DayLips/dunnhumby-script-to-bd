@@ -6,6 +6,7 @@ class CampaignTable(Base):
     __tablename__ = 'campaign_table'
     __table_args__ = {'schema': 'raw'}
 
+    id = Column(Integer, primary_key=True, index=True)
     description = Column(String(5), nullable=True)                  # Описание кампании
     household_key = Column(BigInteger, nullable=False, index=True)  # Индекс для поиска по домохозяйствам
     campaign_id = Column(Integer, nullable=False, index=True)       # Индекс для группировки по кампаниям

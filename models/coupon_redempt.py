@@ -5,6 +5,7 @@ class CouponRedempt(Base):
     __tablename__ = 'coupon_redempt'
     __table_args__ = {'schema': 'raw'}
 
+    id = Column(Integer, primary_key=True, index=True)
     household_key = Column(BigInteger, nullable=False, index=True)
     day = Column(Integer, nullable=False, index=True)          
     coupon_upc = Column(BigInteger, nullable=False, index=True)

@@ -6,6 +6,7 @@ class HHDemographic(Base):
     __tablename__ = 'hh_demographic'
     __table_args__ = {'schema': 'raw'}
 
+    id = Column(Integer, primary_key=True, index=True)
     age_desc = Column(String(20), nullable=True)
     marital_status_code = Column(String(10), nullable=True)
     income_desc = Column(String(50), nullable=True)
