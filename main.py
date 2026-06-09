@@ -13,10 +13,10 @@ def main():
 
 if __name__ == '__main__':
     # main()
-    df = pd.read_csv('data/transaction_data.csv')
+    df = pd.read_csv('data/coupon_redempt.csv')
     df.info()
     print(df.head())
 
-    # max_len = df['MARITAL_STATUS_CODE'].astype(str).str.len().max()
+    # max_len = df['DESCRIPTION'].astype(str).str.len().max()
     # print(f"Максимальная длина: {max_len}")
-    # print(df['MARITAL_STATUS_CODE'].unique())
+    # print(df['DESCRIPTION'].unique())
