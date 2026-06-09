@@ -8,7 +8,7 @@ from repositories import (
 )
 from schemas import (
     ProductCreate, CampaignDescCreate, CampaignTableCreate,
-    CouponRedemptCreate, CouponCreate
+    CouponRedemptCreate, CouponCreate, HHDemographicCreate, TransactionDataCreate
 )
 
 class LoadDunnhumby:
@@ -171,3 +171,103 @@ class LoadDunnhumby:
             self.logger.info(f"Загружено {total_loaded} записей coupon")
         except Exception as e:
             self.logger.error(f"Ошибка загрузки coupon: {e}")
+    
+    def load_hh_demographic(self, db: Session, csv_path: str = 'data/hh_demographic.csv', chunk_size: int = 50000):
+        self.logger.info("Начинаю загрузку hh_demographic...")
+
+        try:
+            total_loaded = 0
+
+            for chunk in pd.read_csv(csv_path, chunksize=chunk_size):
+                validated: list[HHDemographicCreate] = []
+
+                for _, row in chunk.iterrows():
+                    try:
+                        row_dict = {
+                            'age_desc': row['AGE_DESC'],
+                            'marital_status_code': row['MARITAL_STATUS_CODE'],
+                            'income_desc': row['INCOME_DESC'],
+                            'homeowner_desc': row['HOMEOWNER_DESC'],
+                            'hh_comp_desc': row['HH_COMP_DESC'],
+                            'household_size_desc': row['HOUSEHOLD_SIZE_DESC'],
+                            'kid_category_desc': row['KID_CATEGORY_DESC'],
+                            'household_key': row['household_key']
+                        }
+                        validated.append(HHDemographicCreate(**row_dict))
+                    except Exception as e:
+                        self.logger.warning(f"Ошибка валидации: {e}")
+                        continue
+                
+                repo = HHDemographicRepository(db)
+                count = repo.create_many(validated)
+                total_loaded += count
+                self.logger.info(f"Загружен чанк: {count} записей hh_demographic (всего: {total_loaded})")
+            
+            self.logger.info(f"Загружено {total_loaded} записей hh_demographic")
+        except Exception as e:
+            self.logger.error(f"Ошибка загрузки hh_demographic: {e}")
+    
+    def load_transaction_data(self, db: Session, csv_path: str = 'data/transaction_data.csv', chunk_size: int = 50000):
+        self.logger.info("Начинаю загрузку transaction_data...")
+
+        try:
+            total_loaded = 0
+
+            for chunk in pd.read_csv(csv_path, chunksize=chunk_size):
+                validated: list[TransactionDataCreate] = []
+
+                for _, row in chunk.iterrows():
+                    try:
+                        row_dict = {
+                            'household_key': row['household_key'],
+                            'basket_id': row['BASKET_ID'],
+                            'day': row['DAY'],
+                            'product_id': row['PRODUCT_ID'],
+                            'quantity': row['QUANTITY'],
+                            'sales_value': row['SALES_VALUE'],
+                            'store_id': row['STORE_ID'],
+                            'retail_disc': row['RETAIL_DISC'],
+                            'trans_time': row['TRANS_TIME'],
+                            'week_no': row['WEEK_NO'],
+                            'coupon_disc': row['COUPON_DISC'],
+                            'coupon_match_disc': row['COUPON_MATCH_DISC']
+                        }
+                        validated.append(TransactionDataCreate(**row_dict))
+                    except Exception as e:
+                        self.logger.warning(f"Ошибка валидации: {e}")
+                        continue
+                
+                repo = TransactionDataRepository(db)
+                count = repo.create_many(validated)
+                total_loaded += count
+                self.logger.info(f"Загружен чанк: {count} записей transaction_data (всего: {total_loaded})")
+            
+            self.logger.info(f"Загружено {total_loaded} записей transaction_data")
+        except Exception as e:
+            self.logger.error(f"Ошибка загрузки transaction_data: {e}")
+
+    def truncate_all_tables(self, db: Session):
+        self.logger.warning('!!! ОЧИСТКА ВСЕХ ТАБЛИЦ !!!')
+
+        repo = ProductRepository(db)
+        repo.truncate()
+
+        repo = CampaignDescRepository(db)
+        repo.truncate()
+
+        repo = CampaignTableRepository(db)
+        repo.truncate()
+
+        repo = CouponRedemptRepository(db)
+        repo.truncate()
+
+        repo = CouponRepository(db)
+        repo.truncate()
+
+        repo = HHDemographicRepository(db)
+        repo.truncate()
+
+        repo = TransactionDataRepository(db)
+        repo.truncate()
+
+        self.logger.info("Все таблицы очищены")
