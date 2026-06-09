@@ -1,12 +1,14 @@
-from sqlalchemy import Column, Integer, BigInteger, Float
+from sqlalchemy import Column, Integer, BigInteger, Float, PrimaryKeyConstraint
 
 from database import Base
 
 class TransactionData(Base):
     __tablename__ = 'transaction_data'
-    __table_args__ = {'schema': 'raw'}
+    __table_args__ = (
+        PrimaryKeyConstraint('basket_id', 'product_id'),
+        {'schema': 'raw'}
+    )
 
-    id = Column(Integer, primary_key=True, index=True)
     household_key = Column(BigInteger, nullable=False, index=True) # Индекс для поиска по домохозяйствам
     basket_id = Column(BigInteger, nullable=False, index=True)     # Индекс для группировки по корзинам
     day = Column(Integer, nullable=False, index=True)              # Индекс для фильтрации по датам

@@ -20,4 +20,4 @@ class Product(Base):
     curr_size_of_product = Column(String(10), nullable=True)
 
     def __repr__(self):
-        return f"<Product(id={self.id}, department='{self.department}', brand='{self.brand}')>"
+        return f"<Product(id={self.product_id}, department='{self.department}', brand='{self.brand}')>"

@@ -1,12 +1,14 @@
-from sqlalchemy import Column, Integer, BigInteger, String
+from sqlalchemy import Column, Integer, BigInteger, String, PrimaryKeyConstraint
 
 from database import Base
 
 class CampaignTable(Base):
     __tablename__ = 'campaign_table'
-    __table_args__ = {'schema': 'raw'}
+    __table_args__ = (
+        PrimaryKeyConstraint('household_key', 'campaign_id'),
+        {'schema': 'raw'}
+     )
 
-    id = Column(Integer, primary_key=True, index=True)
     description = Column(String(5), nullable=True)                  # Описание кампании
     household_key = Column(BigInteger, nullable=False, index=True)  # Индекс для поиска по домохозяйствам
     campaign_id = Column(Integer, nullable=False, index=True)       # Индекс для группировки по кампаниям
