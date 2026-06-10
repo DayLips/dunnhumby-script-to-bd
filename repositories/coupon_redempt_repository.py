@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import logging
@@ -57,7 +58,7 @@ class CouponRedemptRepository:
     
     def truncate(self) -> bool:
         try:
-            self.db.execute("TRUNCATE TABLE raw.coupon_redempt RESTART IDENTITY")
+            self.db.execute(text("TRUNCATE TABLE raw.coupon_redempt RESTART IDENTITY"))
             self.db.commit()
             logger.info("Таблица coupon_redempt очищена")
             return True

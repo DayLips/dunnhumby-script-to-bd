@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import logging
@@ -57,7 +58,7 @@ class CampaignDescRepository:
     
     def truncate(self) -> bool:
         try:
-            self.db.execute("TRUNCATE TABLE raw.campaign_desc RESTART IDENTITY")
+            self.db.execute(text("TRUNCATE TABLE raw.campaign_desc RESTART IDENTITY"))
             self.db.commit()
             logger.info("Таблица campaign_desc очищена")
             return True

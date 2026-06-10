@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import logging
@@ -57,7 +58,7 @@ class ProductRepository:
     
     def truncate(self) -> bool:
         try:
-            self.db.execute("TRUNCATE TABLE raw.products RESTART IDENTITY")
+            self.db.execute(text("TRUNCATE TABLE raw.products RESTART IDENTITY"))
             self.db.commit()
             logger.info("Таблица products очищена")
             return True
