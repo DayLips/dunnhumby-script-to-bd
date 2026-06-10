@@ -12,262 +12,110 @@ from schemas import (
 )
 
 class LoadDunnhumby:
+    SCHEMAS_DICT_LIST = [
+        {
+            'product_id': 'PRODUCT_ID',
+            'manufacturer': 'MANUFACTURER',
+            'department': 'DEPARTMENT',
+            'brand': 'BRAND',
+            'commodity_desc': 'COMMODITY_DESC',
+            'sub_commodity_desc': 'SUB_COMMODITY_DESC',
+            'curr_size_of_product': 'CURR_SIZE_OF_PRODUCT'
+        },
+        {
+            'description': 'DESCRIPTION',
+            'campaign': 'CAMPAIGN',
+            'start_day': 'START_DAY',
+            'end_day': 'END_DAY'
+        },
+        {
+            'description': 'DESCRIPTION',
+            'household_key': 'household_key',
+            'campaign_id': 'CAMPAIGN'
+        },
+        {
+            'household_key': 'household_key',
+            'day': 'DAY',
+            'coupon_upc': 'COUPON_UPC',
+            'campaign_id': 'CAMPAIGN'
+        },
+        {
+            'coupon_upc': 'COUPON_UPC',
+            'product_id': 'PRODUCT_ID',
+            'campaign_id': 'CAMPAIGN'
+        },
+        {
+            'age_desc': 'AGE_DESC',
+            'marital_status_code': 'MARITAL_STATUS_CODE',
+            'income_desc': 'INCOME_DESC',
+            'homeowner_desc': 'HOMEOWNER_DESC',
+            'hh_comp_desc': 'HH_COMP_DESC',
+            'household_size_desc': 'HOUSEHOLD_SIZE_DESC',
+            'kid_category_desc': 'KID_CATEGORY_DESC',
+            'household_key': 'household_key'
+        },
+        {
+            'household_key': 'household_key',
+            'basket_id': 'BASKET_ID',
+            'day':'DAY',
+            'product_id': 'PRODUCT_ID',
+            'quantity': 'QUANTITY',
+            'sales_value': 'SALES_VALUE',
+            'store_id': 'STORE_ID',
+            'retail_disc': 'RETAIL_DISC',
+            'trans_time': 'TRANS_TIME',
+            'week_no': 'WEEK_NO',
+            'coupon_disc': 'COUPON_DISC',
+            'coupon_match_disc': 'COUPON_MATCH_DISC'
+        }
+        
+    ]
+
+    REPOSITORIES_LIST = [
+        ProductRepository, CampaignDescRepository, CampaignTableRepository, 
+        CouponRedemptRepository, CouponRepository, HHDemographicRepository, TransactionDataRepository
+    ]
+
     def __init__(self, logger: logging.Logger):
         self.logger = logger
 
+    def load_tables(self, db, chunk_size: int = 50000):
+        table_names = ['product', 'campaign_desc', 'campaign_table', 'coupon_redempt', 'coupon','hh_demographic', 'transaction_data']
+        schemas_list = [ProductCreate, CampaignDescCreate, CampaignTableCreate, CouponRedemptCreate, CouponCreate, HHDemographicCreate, TransactionDataCreate]
+
+        self.logger.info("Начинается загрузка таблиц...")
+        for i in range(0, len(table_names)):
+            self.logger.info(f"Начинаю загрузку {table_names[i]}...")
+
+            try:
+                total_loaded = 0
+                for chunk in pd.read_csv(f'data/{table_names[i]}.csv', chunksize=chunk_size):
+                    validated = []
+
+                    for _, row in chunk.iterrows():
+                        try:
+                            row_dict = {}
+                            schemas_dict = self.SCHEMAS_DICT_LIST[i]
+                            for title in schemas_dict:
+                                row_dict[title] = row[schemas_dict[title]]
+                            
+                            validated.append(schemas_list[i](**row_dict))
+                        except Exception as e:
+                            self.logger.warning(f"Ошибка валидации {table_names[i]}: {e}")
+                            continue
+                    
+                    repo = self.REPOSITORIES_LIST[i](db)
+                    count = repo.create_many(validated)
+                    total_loaded += count
+                    self.logger.info(f"Загружен чанк: {count} {table_names[i]} (всего: {total_loaded})")
+            except Exception as e:
+                self.logger.error(f"Ошибка загрузки {table_names[i]}: {e}")
     
-    def load_products(self, db: Session, csv_path: str = 'data/product.csv', chunk_size: int = 50000):
-        self.logger.info("Начинаю загрузку products...")
-
-        try:
-            total_loaded = 0
-
-            for chunk in pd.read_csv(csv_path, chunksize=chunk_size):
-                validated: list[ProductCreate] = []
-
-                for _, row in chunk.iterrows():
-                    try:
-                        row_dict = {
-                            'product_id': row['PRODUCT_ID'],
-                            'manufacturer': row['MANUFACTURER'],
-                            'department': row['DEPARTMENT'],
-                            'brand': row['BRAND'],
-                            'commodity_desc': row['COMMODITY_DESC'],
-                            'sub_commodity_desc': row['SUB_COMMODITY_DESC'],
-                            'curr_size_of_product': row['CURR_SIZE_OF_PRODUCT']
-                        }
-                        validated.append(ProductCreate(**row_dict))
-                    except Exception as e:
-                        self.logger.warning(f"Ошибка валидации продукта: {e}")
-                        continue
-                
-                repo = ProductRepository(db)
-                count = repo.create_many(validated)
-                total_loaded += count
-                self.logger.info(f"Загружен чанк: {count} продуктов (всего: {total_loaded})")
-            
-            self.logger.info(f"Загружено {total_loaded} продуктво")
-        except Exception as e:
-            self.logger.error(f"Ошибка загрузки products: {e}")
-
-    def load_campaign_desc(self, db: Session, csv_path: str = 'data/campaign_desc.csv', chunk_size: int = 50000):
-        self.logger.info("Начинаю загрузку campaign_desc...")
-
-        try:
-            total_loaded = 0
-
-            for chunk in pd.read_csv(csv_path, chunksize=chunk_size):
-                validated: list[CampaignDescCreate] = []
-
-                for _, row in chunk.iterrows():
-                    try:
-                        row_dict = {
-                            'description': row['DESCRIPTION'],
-                            'campaign': row['CAMPAIGN'],
-                            'start_day': row['START_DAY'],
-                            'end_day': row['END_DAY']
-                        }
-                        validated.append(CampaignDescCreate(**row_dict))
-                    except Exception as e:
-                        self.logger.warning(f"Ошибка валидации кампании: {e}")
-                        continue
-                
-                repo = CampaignDescRepository(db)
-                count = repo.create_many(validated)
-                total_loaded += count
-                self.logger.info(f"Загружен чанк: {count} кампаний (всего: {total_loaded})")
-            
-            self.logger.info(f"Загружено {total_loaded} описаний кампаний")
-        except Exception as e:
-            self.logger.error(f"Ошибка загрузки campaign_desc: {e}")
-
-    def load_campaign_table(self, db: Session, csv_path: str = 'data/campaign_table.csv', chunk_size: int = 50000):
-        self.logger.info("Начинаю загрузку campaign_table...")
-
-        try:
-            total_loaded = 0
-
-            for chunk in pd.read_csv(csv_path, chunksize=chunk_size):
-                validated: list[CampaignTableCreate] = []
-
-                for _, row in chunk.iterrows():
-                    try:
-                        row_dict = {
-                            'description': row['DESCRIPTION'],
-                            'household_key': row['household_key'],
-                            'campaign_id': row['CAMPAIGN']
-                        }
-                        validated.append(CampaignTableCreate(**row_dict))
-                    except Exception as e:
-                        self.logger.warning(f"Ошибка валидации: {e}")
-                        continue
-                
-                repo = CampaignTableRepository(db)
-                count = repo.create_many(validated)
-                total_loaded += count
-                self.logger.info(f"Загружен чанк: {count} записей campaign_table (всего: {total_loaded})")
-            
-            self.logger.info(f"Загружено {total_loaded} записей campaign_table")
-        except Exception as e:
-            self.logger.error(f"Ошибка загрузки campaign_table: {e}")
-
-    def load_coupon_redempt(self, db: Session, csv_path: str = 'data/coupon_redempt.csv', chunk_size: int = 50000):
-        self.logger.info("Начинаю загрузку coupon_redempt...")
-
-        try:
-            total_loaded = 0
-
-            for chunk in pd.read_csv(csv_path, chunksize=chunk_size):
-                validated: list[CouponRedemptCreate] = []
-
-                for _, row in chunk.iterrows():
-                    try:
-                        row_dict = {
-                            'household_key': row['household_key'],
-                            'day': row['DAY'],
-                            'coupon_upc': row['COUPON_UPC'],
-                            'campaign_id': row['CAMPAIGN']
-                        }
-                        validated.append(CouponRedemptCreate(**row_dict))
-                    except Exception as e:
-                        self.logger.warning(f"Ошибка валидации: {e}")
-                        continue
-                
-                repo = CouponRedemptRepository(db)
-                count = repo.create_many(validated)
-                total_loaded += count
-                self.logger.info(f"Загружен чанк: {count} записей coupon_redempt (всего: {total_loaded})")
-            
-            self.logger.info(f"Загружено {total_loaded} записей coupon_redempt")
-        except Exception as e:
-            self.logger.error(f"Ошибка загрузки coupon_redempt: {e}")
-
-    def load_coupon(self, db: Session, csv_path: str = 'data/coupon.csv', chunk_size: int = 50000):
-        self.logger.info("Начинаю загрузку coupon...")
-
-        try:
-            total_loaded = 0
-
-            for chunk in pd.read_csv(csv_path, chunksize=chunk_size):
-                validated: list[CouponCreate] = []
-
-                for _, row in chunk.iterrows():
-                    try:
-                        row_dict = {
-                            'coupon_upc': row['COUPON_UPC'],
-                            'product_id': row['PRODUCT_ID'],
-                            'campaign_id': row['CAMPAIGN']
-                        }
-                        validated.append(CouponCreate(**row_dict))
-                    except Exception as e:
-                        self.logger.warning(f"Ошибка валидации: {e}")
-                        continue
-                
-                repo = CouponRepository(db)
-                count = repo.create_many(validated)
-                total_loaded += count
-                self.logger.info(f"Загружен чанк: {count} записей coupon (всего: {total_loaded})")
-            
-            self.logger.info(f"Загружено {total_loaded} записей coupon")
-        except Exception as e:
-            self.logger.error(f"Ошибка загрузки coupon: {e}")
-    
-    def load_hh_demographic(self, db: Session, csv_path: str = 'data/hh_demographic.csv', chunk_size: int = 50000):
-        self.logger.info("Начинаю загрузку hh_demographic...")
-
-        try:
-            total_loaded = 0
-
-            for chunk in pd.read_csv(csv_path, chunksize=chunk_size):
-                validated: list[HHDemographicCreate] = []
-
-                for _, row in chunk.iterrows():
-                    try:
-                        row_dict = {
-                            'age_desc': row['AGE_DESC'],
-                            'marital_status_code': row['MARITAL_STATUS_CODE'],
-                            'income_desc': row['INCOME_DESC'],
-                            'homeowner_desc': row['HOMEOWNER_DESC'],
-                            'hh_comp_desc': row['HH_COMP_DESC'],
-                            'household_size_desc': row['HOUSEHOLD_SIZE_DESC'],
-                            'kid_category_desc': row['KID_CATEGORY_DESC'],
-                            'household_key': row['household_key']
-                        }
-                        validated.append(HHDemographicCreate(**row_dict))
-                    except Exception as e:
-                        self.logger.warning(f"Ошибка валидации: {e}")
-                        continue
-                
-                repo = HHDemographicRepository(db)
-                count = repo.create_many(validated)
-                total_loaded += count
-                self.logger.info(f"Загружен чанк: {count} записей hh_demographic (всего: {total_loaded})")
-            
-            self.logger.info(f"Загружено {total_loaded} записей hh_demographic")
-        except Exception as e:
-            self.logger.error(f"Ошибка загрузки hh_demographic: {e}")
-    
-    def load_transaction_data(self, db: Session, csv_path: str = 'data/transaction_data.csv', chunk_size: int = 50000):
-        self.logger.info("Начинаю загрузку transaction_data...")
-
-        try:
-            total_loaded = 0
-
-            for chunk in pd.read_csv(csv_path, chunksize=chunk_size):
-                validated: list[TransactionDataCreate] = []
-
-                for _, row in chunk.iterrows():
-                    try:
-                        row_dict = {
-                            'household_key': row['household_key'],
-                            'basket_id': row['BASKET_ID'],
-                            'day': row['DAY'],
-                            'product_id': row['PRODUCT_ID'],
-                            'quantity': row['QUANTITY'],
-                            'sales_value': row['SALES_VALUE'],
-                            'store_id': row['STORE_ID'],
-                            'retail_disc': row['RETAIL_DISC'],
-                            'trans_time': row['TRANS_TIME'],
-                            'week_no': row['WEEK_NO'],
-                            'coupon_disc': row['COUPON_DISC'],
-                            'coupon_match_disc': row['COUPON_MATCH_DISC']
-                        }
-                        validated.append(TransactionDataCreate(**row_dict))
-                    except Exception as e:
-                        self.logger.warning(f"Ошибка валидации: {e}")
-                        continue
-                
-                repo = TransactionDataRepository(db)
-                count = repo.create_many(validated)
-                total_loaded += count
-                self.logger.info(f"Загружен чанк: {count} записей transaction_data (всего: {total_loaded})")
-            
-            self.logger.info(f"Загружено {total_loaded} записей transaction_data")
-        except Exception as e:
-            self.logger.error(f"Ошибка загрузки transaction_data: {e}")
-
     def truncate_all_tables(self, db: Session):
         self.logger.warning('!!! ОЧИСТКА ВСЕХ ТАБЛИЦ !!!')
 
-        repo = ProductRepository(db)
-        repo.truncate()
-
-        repo = CampaignDescRepository(db)
-        repo.truncate()
-
-        repo = CampaignTableRepository(db)
-        repo.truncate()
-
-        repo = CouponRedemptRepository(db)
-        repo.truncate()
-
-        repo = CouponRepository(db)
-        repo.truncate()
-
-        repo = HHDemographicRepository(db)
-        repo.truncate()
-
-        repo = TransactionDataRepository(db)
-        repo.truncate()
+        for reposit in self.REPOSITORIES_LIST:
+            repo = reposit(db)
+            repo.truncate()
 
         self.logger.info("Все таблицы очищены")
