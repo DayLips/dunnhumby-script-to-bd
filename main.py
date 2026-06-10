@@ -17,7 +17,7 @@ def main():
         console_handler.setFormatter(console_formatter)
         logger.addHandler(console_handler)
         
-        file_handler = logging.FileHandler('logs/campaign_desc_repository.log', encoding='utf-8')
+        file_handler = logging.FileHandler('logs/loader.log', encoding='utf-8')
         file_handler.setFormatter(console_formatter)
         logger.addHandler(file_handler)
     try:
