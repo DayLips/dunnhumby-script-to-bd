@@ -4,10 +4,6 @@ from database import init_db, SessionLocal
 from tools import LoadDunnhumby
 
 def main():
-    init_db()
-    logger.info("Создание таблиц...")
-    db = SessionLocal()
-
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
 
@@ -20,6 +16,12 @@ def main():
         file_handler = logging.FileHandler('logs/loader.log', encoding='utf-8')
         file_handler.setFormatter(console_formatter)
         logger.addHandler(file_handler)
+
+    logger.info("Создание таблиц...")
+    init_db()
+    
+    db = SessionLocal()
+
     try:
         loader = LoadDunnhumby(logger=logger)
         loader.truncate_all_tables(db)
@@ -29,6 +31,4 @@ def main():
         db.close()
 
 if __name__ == '__main__':
-    # main()
-    logger = logging.getLogger(__name__)
-    print(type(logger))
+    main()
